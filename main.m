@@ -1,3 +1,0 @@
-%% [METAC] exploration data set
-
-
