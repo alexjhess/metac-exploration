@@ -22,131 +22,78 @@ end
 
 %% add hgf toolbox
 addpath(genpath('hgf-toolbox'));
-addpath('comb_obs_models')
+addpath('comb_obs_models');
 
 
 %% load data
-
-basedir = fullfile('R:METAC', 'behavior', 'raw');
-fname = fullfile('behavior', 'task', '*.csv');
-
-id = readtable(fullfile('data', 'metac_ppids_exploration_task_v3_1.txt'));
-
-for n = 1%:size(id,1)
-    ppid = ['TNU_METAC_', num2str(id{n,1})];
-    d = dir(fullfile(basedir, ppid, fname));
-    for i = 1:size(d,1)
-        if contains(d(i).name, 'experiment')
-            % specs stored in rows 1-2
-            dat = readtable(fullfile(d(i).folder, d(i).name), 'NumHeaderLines', 2)
-        end
-    end
-end
+% dat = load_discovery_set();
+load('data\discovery_set_tmp.mat');
 
 
-%% get responses
-
-u_bin = dat.jSuccess;
-y_pred = dat.prediction;
-u_pe = u_bin - y_pred;
-y_mc = dat.control;
+%% visualise raw data
+metac_plot_raw_data(dat);
 
 
-%% plot raw data
-
-figure;
-plot(y_mc)
-hold on;
-plot(1-abs(u_pe))
-hold off;
-
-corr(y_mc,1-abs(u_pe))
 
 
-%% build int HGF
+%% MC: cont eHGF on raw PE (scale of PE ???)
+dat = metac_raw_PE_mc_ehgf(dat);
 
-sim = tapas_simModel(u_bin,...
-    'tapas_ehgf_binary',...
-    [NaN 0 1 NaN 1 1 NaN 0 0 1 1 NaN -2 2],...
-    'tapas_beta_obs',...
-    log(128),...
-    12345 ...
-    );
-tapas_ehgf_binary_plotTraj(sim)
+%% INT: 3-level binary HGF MAB
+dat = metac_int_hgf_binary_mab(dat);
+
+%% INT: 3-level binary eHGF MAB (ERROR..)
+dat = metac_int_ehgf_binary_mab(dat);
 
 
-%% fit in HGF
+%% INT: classical 3-level binary eHGF (NOT APPROPRIATE!!!)
+dat = metac_int_ehgf_binary(dat);
 
-est = tapas_fitModel(y_pred,...
-    u_bin,...
-    tapas_ehgf_binary_config,...
-    tapas_beta_obs_config,...
-    tapas_quasinewton_optim_config ...
-    );
-tapas_ehgf_binary_plotTraj(est)
+
+
+
 
 
 %% ____________
-% build metacognitive HGF
+% build autoregr mc obs model (giuliara). HGF MAB ???
 
-sim = tapas_simModel((1.-abs(u_pe)),...
-    'tapas_ehgf',...
-    [0 1 1 1 0 0 1 -2 -2 10],...
-    'tapas_beta_obs',...
-    log(128),...
-    12345 ...
-    );
-tapas_ehgf_plotTraj(sim)
-
-
-%% fit metacognitive HGF
-
-est = tapas_fitModel(10.*y_mc,...
-    10.*(1.-abs(u_pe)),...
-    tapas_ehgf_config,...
-    tapas_gaussian_obs_config,...
-    tapas_quasinewton_optim_config ...
-    );
-tapas_ehgf_plotTraj(est)
-
-
-%% ____________
-% build autoregr mc obs model
-
-sim = tapas_simModel(u_bin,...
+dat.ehgf_mc_pe.sub(n).sim = tapas_simModel(dat.u_bin(:,n),...
     'tapas_ehgf_binary',...
     [NaN 0 1 NaN 1 1 NaN 0 0 1 1 NaN -2 2],...
     'mc_autoreg_pe_inobs',... 'mc_null_inobs',...
     [0.05 1 -2 -1.5 -0.04 0.005],... [0.05 -2 0.005],...
     12345 ...
     );
-tapas_ehgf_binary_plotTraj(sim)
+tapas_ehgf_binary_plotTraj(dat.ehgf_mc_pe.sub(n).sim)
 hold on
-plot(sim.y(:,2))
+plot(dat.ehgf_mc_pe.sub(n).sim.y(:,2), '.')
 
-%% null model
-sim = tapas_simModel(u_bin,...
+%% sim null model. HGF MAB ???
+dat.ehgf_mc_null.sub(n).sim = tapas_simModel(dat.u_bin(:,n),...
     'tapas_ehgf_binary',...
     [NaN 0 1 NaN 1 1 NaN 0 0 1 1 NaN -2 2],...
     'mc_null_inobs',...
     [0.05 0.5 0.005],...
     12345 ...
     );
-tapas_ehgf_binary_plotTraj(sim)
+tapas_ehgf_binary_plotTraj(dat.ehgf_mc_null.sub(n).sim)
 hold on
-plot(sim.y(:,2))
+plot(dat.ehgf_mc_null.sub(n).sim.y(:,2), '.')
 
 
-%% fit metacognitive HGF
+%% fit metacognitive HGF (giuliara). HGF MAB ???
 
-est = tapas_fitModel(y_mc,...
-    u_bin,...
-    tapas_ehgf_binary_config,...
-    mc_autoreg_pe_inobs_config,...
-    tapas_quasinewton_optim_config ...
-    );
-tapas_ehgf_binary_plotTraj(est)
-
+for n = 1:size(dat.u_bin,2)
+    dat.ehgf_mc_null.sub(n).est = tapas_fitModel([dat.y_pred(:,n), dat.y_mc(:,n)],...
+        dat.u_bin(:,n),...
+        tapas_ehgf_binary_config,...
+        mc_null_inobs_config,...
+        tapas_quasinewton_optim_config ...
+        );
+    tapas_ehgf_binary_plotTraj(dat.ehgf_mc_null.sub(n).est)
+    hold on
+    plot(dat.ehgf_mc_null.sub(n).est.y(:,2), '.')
+end
 
 
 
