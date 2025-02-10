@@ -8,7 +8,7 @@ set(0,'DefaultFigureWindowStyle','docked')
 %% plot task variables (sub 1)
 n=1;
 figure
-ax1 = plot(dat.u_bin(:,n), '.');
+plot(dat.u_bin(:,n), '.');
 hold on;
 plot(dat.y_pred(:,n))
 plot(dat.y_mc(:,n))
@@ -28,7 +28,7 @@ print(figdir, '-dpng');
 %% plot task variables (sub 1)
 n=1;
 figure
-ax1 = plot(dat.u_bin(:,n), '.');
+plot(dat.u_bin(:,n), '.');
 hold on;
 plot(dat.y_pred(:,n))
 plot(dat.y_mc(:,n))
@@ -47,7 +47,7 @@ print(figdir, '-dpng');
 
 %% plot conditions
 figure
-ax = plot(dat.u_mab2, '.');
+plot(dat.u_mab2, '.');
 hold on;
 plot(dat.u_mab4, 'o');
 ylim([0.9 4.1])

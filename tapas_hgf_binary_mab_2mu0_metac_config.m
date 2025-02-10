@@ -1,4 +1,4 @@
-function c = tapas_hgf_binary_mab_metac_config
+function c = tapas_hgf_binary_mab_2mu0_metac_config
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Contains the configuration for the Hierarchical Gaussian Filter (HGF) in a multi-armded bandit
@@ -107,7 +107,7 @@ function c = tapas_hgf_binary_mab_metac_config
 c = struct;
 
 % Model name
-c.model = 'hgf_binary_mab_metac';
+c.model = 'hgf_binary_mab_2mu0_metac';
 
 % Number of levels (minimum: 3)
 c.n_levels = 3;
@@ -165,6 +165,12 @@ c.logkasa = [     0,      0];
 c.ommu = [NaN,  -2,  -6];
 c.omsa = [NaN, 4^2, 4^2];
 
+% different mu2(0) for second bandit
+c.mu2_0mu = [0];
+c.mu2_0sa = [0];
+% c.logsa2_0mu = [log(0.1)];
+% c.logsa2_0sa = [0];
+
 % Gather prior settings in vectors
 c.priormus = [
     c.mu_0mu,...
@@ -172,6 +178,7 @@ c.priormus = [
     c.rhomu,...
     c.logkamu,...
     c.ommu,...
+    c.mu2_0mu,... c.logsa2_0mu,...
          ];
 
 c.priorsas = [
@@ -180,19 +187,20 @@ c.priorsas = [
     c.rhosa,...
     c.logkasa,...
     c.omsa,...
+    c.mu2_0sa,... c.logsa2_0sa,...
          ];
 
 % Check whether we have the right number of priors
-expectedLength = 3*c.n_levels+2*(c.n_levels-1)+1;
+expectedLength = 3*c.n_levels+2*(c.n_levels-1)+2;
 if length([c.priormus, c.priorsas]) ~= 2*expectedLength;
     error('tapas:hgf:PriorDefNotMatchingLevels', 'Prior definition does not match number of levels.')
 end
 
 % Model function handle
-c.prc_fun = @tapas_hgf_binary_mab_metac;
+c.prc_fun = @tapas_hgf_binary_mab_2mu0_metac;
 
 % Handle to function that transforms perceptual parameters to their native space
 % from the space they are estimated in
-c.transp_prc_fun = @tapas_hgf_binary_mab_metac_transp;
+c.transp_prc_fun = @tapas_hgf_binary_mab_2mu0_metac_transp;
 
 return;
