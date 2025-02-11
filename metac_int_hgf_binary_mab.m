@@ -30,7 +30,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0.sub(n).bo_est)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     % color code conditions
     ax=axis;
     fill([ts, fliplr(ts)],...
@@ -58,7 +58,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0.sub(n).sim)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     plot(ts,dat.hgf_binary_mab_2mu0.sub(n).sim.y, '.')
     % color code conditions
     ax=axis;
@@ -91,7 +91,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0.sub(n).est)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     plot(ts,dat.hgf_binary_mab_2mu0.sub(n).est.y,'.')
     % color code conditions
     ax=axis;
@@ -155,7 +155,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_metac_plotTraj(dat.hgf_binary_mab.sub(n).bo_est)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     % color code conditions
     ax=axis;
     fill([ts, fliplr(ts)],...
@@ -179,7 +179,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_metac_plotTraj(dat.hgf_binary_mab.sub(n).sim)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     plot(ts,dat.hgf_binary_mab.sub(n).sim.y, '.')
     % color code conditions
     ax=axis;
@@ -211,7 +211,7 @@ for n = 1:size(dat.u_bin,2)
         );
     tapas_hgf_binary_mab_metac_plotTraj(dat.hgf_binary_mab.sub(n).est)
     hold on;
-    ts = cumsum(dat.u_mab2');
+    ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
     plot(ts,dat.hgf_binary_mab.sub(n).est.y,'.')
     % color code conditions
     ax=axis;

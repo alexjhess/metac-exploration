@@ -6,13 +6,6 @@ function [dat] = metac_int_hgf_binary_mc_autoreg_obs_mab(dat)
 set(0,'DefaultFigureWindowStyle','docked')
 
 
-%% TODO:
-%   - SIMULATING FROM MAB models --> adapt OBS FCTs to simulate from
-%   different bandits...
-
-
-
-
 %% ________________________________________________________________________
 %%%% HGF MAB multiple mu_2(0) (one for each bandit) %%%%
 %% est Bayes Optimal pars (prc model)
@@ -28,7 +21,7 @@ for n = 1:size(dat.u_bin,2)
     %take first y_pred as priormu
     hgf_mab2_2mu0_config.priormus(2) = tapas_logit(dat.y_pred(1,n),1);
     hgf_mab2_2mu0_config.priormus(15) = tapas_logit(dat.y_pred(windtrials(1),n),1);
-    hgf_mab2_2mu0_config = tapas_align_priors_fields(hgf_mab2_2mu0_config)
+    hgf_mab2_2mu0_config = tapas_align_priors_fields(hgf_mab2_2mu0_config);
 
     dat.hgf_binary_mab_2mu0.sub(n).bo_est = tapas_fitModel([],...
         [dat.u_bin(:,n) dat.u_mab2],...
@@ -39,12 +32,12 @@ for n = 1:size(dat.u_bin,2)
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0.sub(n).bo_est)
     hold on;
     ts = cumsum(dat.u_mab2');
-    % color code conditions
-    ax=axis;
-    fill([ts, fliplr(ts)],...
-        [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-        [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    colormap(flipud(colormap("autumn")))
+    % % color code conditions
+    % ax=axis;
+    % fill([ts, fliplr(ts)],...
+    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
+    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
+    % colormap(flipud(colormap("autumn")))
     hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_bo_est_sub' num2str(n)]);
     print(figdir, '-dpng');
@@ -54,27 +47,24 @@ end
 % sim interoceptive HGF_mab2 with 2 different mu2(0) (use BO pars)
 % MC null OBS model
 
-% TODO:
-%   - ADAPT OBS FCT TO SIMULATE FROM DIFFERENT BANDITS!
-
-for n = 1%:size(dat.u_bin,2)
+for n = 1:size(dat.u_bin,2)
     dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim = tapas_simModel([dat.u_bin(:,n) dat.u_mab2],...
         'tapas_hgf_binary_mab_2mu0_metac',...
         dat.hgf_binary_mab_2mu0.sub(n).bo_est.p_prc.p,... default [NaN 0 1 NaN 0.1 1 NaN 0 0 1 1 NaN -2 -6],...
-        'mc_null_inobs',...
+        'mc_null_inobs_mab',...
         [0.05 0.5 0.005],...
         12345 ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim)
     hold on;
-    ts = cumsum(dat.u_mab2');
-    plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim.y, '.')
-    % color code conditions
-    ax=axis;
-    fill([ts, fliplr(ts)],...
-        [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-        [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    colormap(flipud(colormap("autumn")))
+    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
+    % plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim.y, '.')
+    % % color code conditions
+    % ax=axis;
+    % fill([ts, fliplr(ts)],...
+    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
+    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
+    % colormap(flipud(colormap("autumn")))
     hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_null_sim_sub' num2str(n)]);
     print(figdir, '-dpng');
@@ -96,24 +86,23 @@ for n = 1:size(dat.u_bin,2)
     dat.hgf_binary_mab_2mu0_mc_null.sub(n).est = tapas_fitModel([dat.y_pred(:,n), dat.y_mc(:,n)],...
         [dat.u_bin(:,n) dat.u_mab2],...
         hgf_mab2_2mu0_config,...
-        mc_null_inobs_config,...
+        mc_null_inobs_mab_config,...
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_null.sub(n).est)
-    hold on;
-    ts = cumsum(dat.u_mab2');
-    plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).est.y,'.')
-    % color code conditions
-    ax=axis;
-    fill([ts, fliplr(ts)],...
-        [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-        [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    colormap(flipud(colormap("autumn")))
-    hold off;
+    % hold on;
+    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
+    % plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).est.y,'.')
+    % % color code conditions
+    % ax=axis;
+    % fill([ts, fliplr(ts)],...
+    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
+    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
+    % colormap(flipud(colormap("autumn")))
+    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_null_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
-
 
 %% fit interoceptive HGF_mab2 with different mu2(0) per bandit (bo_pars including modified mu_2(0))
 % MC RES OBS !
@@ -135,23 +124,25 @@ for n = 1:size(dat.u_bin,2)
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_res.sub(n).est)
-    hold on;
-    ts = cumsum(dat.u_mab2');
-    plot(ts,dat.hgf_binary_mab_2mu0_mc_res.sub(n).est.y,'.')
-    % color code conditions
-    ax=axis;
-    fill([ts, fliplr(ts)],...
-        [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-        [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    colormap(flipud(colormap("autumn")))
-    hold off;
+    % hold on;
+    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
+    % plot(ts,dat.hgf_binary_mab_2mu0_mc_res.sub(n).est.y,'.')
+    % % color code conditions
+    % ax=axis;
+    % fill([ts, fliplr(ts)],...
+    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
+    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
+    % colormap(flipud(colormap("autumn")))
+    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_res_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
 
 
+
 %% fit interoceptive HGF_mab2 with different mu2(0) per bandit (bo_pars including modified mu_2(0))
 % MC PE OBS !
+%% TBD !!!
 
 % 2 different mu2(0)
 hgf_mab2_2mu0_config = tapas_hgf_binary_mab_2mu0_metac_config;
@@ -170,19 +161,25 @@ for n = 1%:size(dat.u_bin,2)
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est)
-    hold on;
-    ts = cumsum(dat.u_mab2');
-    plot(ts,dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est.y,'.')
-    % color code conditions
-    ax=axis;
-    fill([ts, fliplr(ts)],...
-        [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-        [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    colormap(flipud(colormap("autumn")))
-    hold off;
+    % hold on;
+    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
+    % plot(ts,dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est.y,'.')
+    % % color code conditions
+    % ax=axis;
+    % fill([ts, fliplr(ts)],...
+    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
+    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
+    % colormap(flipud(colormap("autumn")))
+    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_pe_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
+
+
+%% fit interoceptive HGF_mab2 with different mu2(0) per bandit (bo_pars including modified mu_2(0))
+% MC PE+RES OBS !
+% 
+% ...
 
 
 

@@ -35,11 +35,11 @@ b = r.c_prc.n_bandits;
 n = size(r.u,1);
 
 % Time axis
-if size(r.u,2) > 1
-    t = r.u(:,end)';
-else
+% if size(r.u,2) > 1
+%     t = r.u(:,end)';
+% else
     t = ones(1,n);
-end
+% end
 
 ts = cumsum(t);
 ts = [0, ts];
@@ -51,11 +51,18 @@ catch
     l = (length(r.p_prc.p)+1)/5;
 end
 
+% number of plots
+if size(r.y,2) <= 1
+    npl = l;
+else % multimodal obs
+    npl = l + size(r.y,2)-1;
+end
+
 % Upper levels
 for j = 1:l-2
 
     % Subplots
-    subplot(l,1,j);
+    subplot(npl,1,j);
 
     if plotsd == true
         upperprior = r.p_prc.mu_0(l-j+1) +sqrt(r.p_prc.sa_0(l-j+1));
@@ -78,7 +85,7 @@ for j = 1:l-2
 end
 
 % Second level
-subplot(l,1,l-1)
+subplot(npl,1,l-1)
 
 
 if plotsd == true
@@ -110,20 +117,22 @@ title('Posterior expectations of x_2', 'FontWeight', 'bold');
 ylabel('\mu_2');
 
 % Input level
-subplot(l,1,l);
+subplot(npl,1,l);
 
 for j=1:b
     if j == 1
         plot(ts, [tapas_sgm(r.p_prc.mu_0(2), 1); tapas_sgm(r.traj.mu(:,2,j), 1)], 'Color', colors(j,:), 'LineWidth', 2);
         hold all;
         plot(0, tapas_sgm(r.p_prc.mu_0(2), 1), 'o', 'Color', colors(j,:), 'LineWidth', 2); % prior
+        plot(ts(r.u(:,2)==j)+1, r.u(r.u(:,2)==j,1), '.', 'Color', colors(j,:)); % inputs
     elseif j == 2
         plot(ts, [tapas_sgm(r.p_prc.mu2_0, 1); tapas_sgm(r.traj.mu(:,2,j), 1)], 'Color', colors(j,:), 'LineWidth', 2);
         hold all;
         plot(0, tapas_sgm(r.p_prc.mu2_0, 1), 'o', 'Color', colors(j,:), 'LineWidth', 2); % prior
+        plot(ts(r.u(:,2)==j)+1, r.u(r.u(:,2)==j,1), '.', 'Color', colors(j,:)); % inputs
     end
 end
-plot(ts(2:end), r.u(:,1), '.', 'Color', [0 0 0]); % inputs
+% plot(ts(2:end), r.u(:,1), '.', 'Color', [0 0 0]); % inputs
 plot(ts(2:end), r.traj.wt(:,1), 'k') % implied learning rate 
 if (ploty == true) && ~isempty(find(strcmp(fieldnames(r),'y'))) && ~isempty(r.y)
     y = r.y(:,1);
@@ -132,8 +141,10 @@ if (ploty == true) && ~isempty(find(strcmp(fieldnames(r),'y'))) && ~isempty(r.y)
         plot(ts(r.irr)+1,  1.08.*ones([1 length(r.irr)]), 'x', 'Color', [1 0.7 0], 'Markersize', 11, 'LineWidth', 2); % irregular responses
     end
     for j=1:b
-        plot(find(y==j), 1.08*ones([1 length(find(y==j))]), '.', 'Color', colors(j,:)); % responses
+        % plot(find(y==j), 1.08*ones([1 length(find(y==j))]), '.', 'Color', colors(j,:)); % binary responses
+        % plot(ts(r.u(:,2)==j)+1, r.y(r.u(:,2)==j,1), '.', 'Color', colors(j,:)) % responses (color by bandit)
     end
+    plot(r.y(:,1), '.', 'Color', [1 0.7 0]) % responses
     title(['Response y, input u (black dots), learning rate (fine black line), and posterior expectation of reward s(\mu_2) ', ...
            '(colour coded) for \rho=', num2str(r.p_prc.rho(2:end)), ', \kappa=', ...
            num2str(r.p_prc.ka(2:end)), ', \omega=', num2str(r.p_prc.om(2:end))], ...
@@ -141,7 +152,7 @@ if (ploty == true) && ~isempty(find(strcmp(fieldnames(r),'y'))) && ~isempty(r.y)
     ylabel('y, u, s(\mu_2)');
     axis([0 ts(end) -0.15 1.15]);
 else
-    title(['Input u (black dots), learning rate (fine black line), and posterior expectation of input s(\mu_2) ', ...
+    title(['Input u (dots), learning rate (fine black line), and posterior expectation of input s(\mu_2) ', ...
            '(red) for \rho=', num2str(r.p_prc.rho(2:end)), ', \kappa=', ...
            num2str(r.p_prc.ka(2:end)), ', \omega=', num2str(r.p_prc.om(2:end))], ...
       'FontWeight', 'bold');
@@ -151,3 +162,24 @@ end
 plot(ts(2:end), 0.5, 'k');
 xlabel('Trial number');
 hold off;
+
+% second response data modality
+if npl > 3
+    subplot(npl,1,npl);
+    plot(r.y(:,2), '.', 'Color', [1 0.7 0]) % mc responses
+    hold all;
+    if isfield(r, 'c_sim')
+        title(['MC response y (orange) for obs param vector ', num2str(r.p_obs.p)], ...
+          'FontWeight', 'bold');
+    else
+        plot(r.optim.yhat(:,2), 'Color', 'b') % mc responses
+        
+        title(['y_{mc} (orange) and post. expectation of ', ...
+               'y_{hat} (col. by cond.) for obs transp param vector ', num2str(r.p_obs.ptrans)], ...
+          'FontWeight', 'bold');
+    end
+    xlim([0 n])
+    ylabel('$y_{mc}, \hat{y}_{mc}$', 'Interpreter', 'Latex')
+    xlabel('Trial number');
+    hold off;
+end
