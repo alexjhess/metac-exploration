@@ -45,55 +45,16 @@ dat = metac_int_hgf_binary_mab(dat);
 %% INT: 3-level binary eHGF MAB (ERROR..)
 dat = metac_int_ehgf_binary_mab(dat);
 
-
 %% INT: classical 3-level binary eHGF (NOT APPROPRIATE!!!)
 dat = metac_int_ehgf_binary(dat);
 
+%% INT: 3-level binary HGF MAB + MC autoreg obs model
+dat = metac_int_hgf_binary_mc_autoreg_obs_mab(dat);
 
 
 
 
 
-%% ____________
-% build autoregr mc obs model (giuliara). HGF MAB ???
-
-dat.ehgf_mc_pe.sub(n).sim = tapas_simModel(dat.u_bin(:,n),...
-    'tapas_ehgf_binary',...
-    [NaN 0 1 NaN 1 1 NaN 0 0 1 1 NaN -2 2],...
-    'mc_autoreg_pe_inobs',... 'mc_null_inobs',...
-    [0.05 1 -2 -1.5 -0.04 0.005],... [0.05 -2 0.005],...
-    12345 ...
-    );
-tapas_ehgf_binary_plotTraj(dat.ehgf_mc_pe.sub(n).sim)
-hold on
-plot(dat.ehgf_mc_pe.sub(n).sim.y(:,2), '.')
-
-%% sim null model. HGF MAB ???
-dat.ehgf_mc_null.sub(n).sim = tapas_simModel(dat.u_bin(:,n),...
-    'tapas_ehgf_binary',...
-    [NaN 0 1 NaN 1 1 NaN 0 0 1 1 NaN -2 2],...
-    'mc_null_inobs',...
-    [0.05 0.5 0.005],...
-    12345 ...
-    );
-tapas_ehgf_binary_plotTraj(dat.ehgf_mc_null.sub(n).sim)
-hold on
-plot(dat.ehgf_mc_null.sub(n).sim.y(:,2), '.')
-
-
-%% fit metacognitive HGF (giuliara). HGF MAB ???
-
-for n = 1:size(dat.u_bin,2)
-    dat.ehgf_mc_null.sub(n).est = tapas_fitModel([dat.y_pred(:,n), dat.y_mc(:,n)],...
-        dat.u_bin(:,n),...
-        tapas_ehgf_binary_config,...
-        mc_null_inobs_config,...
-        tapas_quasinewton_optim_config ...
-        );
-    tapas_ehgf_binary_plotTraj(dat.ehgf_mc_null.sub(n).est)
-    hold on
-    plot(dat.ehgf_mc_null.sub(n).est.y(:,2), '.')
-end
 
 
 
