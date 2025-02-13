@@ -8,7 +8,7 @@ set(0,'DefaultFigureWindowStyle','docked')
 
 %% ________________________________________________________________________
 %%%% HGF MAB multiple mu_2(0) (one for each bandit) %%%%
-%% est Bayes Optimal pars (prc model)
+%%%% est Bayes Optimal pars (prc model)
 
 % 2 different mu2(0)
 hgf_mab2_2mu0_config = tapas_hgf_binary_mab_2mu0_metac_config;
@@ -30,15 +30,6 @@ for n = 1:size(dat.u_bin,2)
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0.sub(n).bo_est)
-    hold on;
-    ts = cumsum(dat.u_mab2');
-    % % color code conditions
-    % ax=axis;
-    % fill([ts, fliplr(ts)],...
-    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    % colormap(flipud(colormap("autumn")))
-    hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_bo_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
@@ -56,16 +47,6 @@ for n = 1:size(dat.u_bin,2)
         12345 ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim)
-    hold on;
-    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
-    % plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).sim.y, '.')
-    % % color code conditions
-    % ax=axis;
-    % fill([ts, fliplr(ts)],...
-    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    % colormap(flipud(colormap("autumn")))
-    hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_null_sim_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
@@ -90,16 +71,6 @@ for n = 1:size(dat.u_bin,2)
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_null.sub(n).est)
-    % hold on;
-    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
-    % plot(ts,dat.hgf_binary_mab_2mu0_mc_null.sub(n).est.y,'.')
-    % % color code conditions
-    % ax=axis;
-    % fill([ts, fliplr(ts)],...
-    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    % colormap(flipud(colormap("autumn")))
-    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_null_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
@@ -124,16 +95,6 @@ for n = 1:size(dat.u_bin,2)
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_res.sub(n).est)
-    % hold on;
-    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
-    % plot(ts,dat.hgf_binary_mab_2mu0_mc_res.sub(n).est.y,'.')
-    % % color code conditions
-    % ax=axis;
-    % fill([ts, fliplr(ts)],...
-    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    % colormap(flipud(colormap("autumn")))
-    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_res_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
@@ -142,13 +103,12 @@ end
 
 %% fit interoceptive HGF_mab2 with different mu2(0) per bandit (bo_pars including modified mu_2(0))
 % MC PE OBS !
-%% TBD !!!
 
 % 2 different mu2(0)
 hgf_mab2_2mu0_config = tapas_hgf_binary_mab_2mu0_metac_config;
 hgf_mab2_2mu0_config.n_bandits = 2;
 
-for n = 1%:size(dat.u_bin,2)
+for n = 1:size(dat.u_bin,2)
 
     %take bo pars as priormus
     hgf_mab2_2mu0_config.priormus = dat.hgf_binary_mab_2mu0.sub(n).bo_est.p_prc.ptrans; 
@@ -157,20 +117,10 @@ for n = 1%:size(dat.u_bin,2)
     dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est = tapas_fitModel([dat.y_pred(:,n), dat.y_mc(:,n)],...
         [dat.u_bin(:,n) dat.u_mab2],...
         hgf_mab2_2mu0_config,...
-        mc_autoreg_pe_inobs_config,...
+        mc_autoreg_pe_inobs_mab_config,...
         tapas_quasinewton_optim_config ...
         );
     tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est)
-    % hold on;
-    % ts = 1:size(dat.u_bin,1); %cumsum(dat.u_mab2');
-    % plot(ts,dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est.y,'.')
-    % % color code conditions
-    % ax=axis;
-    % fill([ts, fliplr(ts)],...
-    %     [ax(3)*ones(1,length(ts)), ax(4)*ones(1,length(ts))],...
-    %     [dat.u_mab4', fliplr(dat.u_mab4')], 'EdgeAlpha', 0, 'FaceAlpha', 0.15);
-    % colormap(flipud(colormap("autumn")))
-    % hold off;
     figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_pe_est_sub' num2str(n)]);
     print(figdir, '-dpng');
 end
@@ -178,11 +128,48 @@ end
 
 %% fit interoceptive HGF_mab2 with different mu2(0) per bandit (bo_pars including modified mu_2(0))
 % MC PE+RES OBS !
-% 
-% ...
+
+% 2 different mu2(0)
+hgf_mab2_2mu0_config = tapas_hgf_binary_mab_2mu0_metac_config;
+hgf_mab2_2mu0_config.n_bandits = 2;
+
+for n = 1:size(dat.u_bin,2)
+
+    %take bo pars as priormus
+    hgf_mab2_2mu0_config.priormus = dat.hgf_binary_mab_2mu0.sub(n).bo_est.p_prc.ptrans; 
+    hgf_mab2_2mu0_config = tapas_align_priors_fields(hgf_mab2_2mu0_config);
+
+    dat.hgf_binary_mab_2mu0_mc_pe_res.sub(n).est = tapas_fitModel([dat.y_pred(:,n), dat.y_mc(:,n)],...
+        [dat.u_bin(:,n) dat.u_mab2],...
+        hgf_mab2_2mu0_config,...
+        mc_autoreg_pe_res_inobs_mab_config,...
+        tapas_quasinewton_optim_config ...
+        );
+    tapas_hgf_binary_mab_2mu0_metac_plotTraj(dat.hgf_binary_mab_2mu0_mc_pe_res.sub(n).est)
+    figdir = fullfile('figures', 'int_hgf_binary_mab_2mu0_mc_autoreg', ['mab2_mc_pe_res_est_sub' num2str(n)]);
+    print(figdir, '-dpng');
+end
 
 
+%% model comparison
 
+F = NaN(4,size(dat.u_bin,2));
+
+for n = 1:size(dat.u_bin,2)
+    F(1,n) = dat.hgf_binary_mab_2mu0_mc_null.sub(n).est.optim.LME;
+    F(2,n) = dat.hgf_binary_mab_2mu0_mc_pe.sub(n).est.optim.LME;
+    F(3,n) = dat.hgf_binary_mab_2mu0_mc_res.sub(n).est.optim.LME;
+    F(4,n) = dat.hgf_binary_mab_2mu0_mc_pe_res.sub(n).est.optim.LME;
+end
+
+%%
+metac_dir = pwd;
+cd('C:\Users\alhess\Documents\GitLab_TNU\spirl_analysis\VBA-toolbox');
+VBA_setup();
+cd(metac_dir)
+
+%%
+[posterior, out] = VBA_groupBMC(F);
 
 
 
