@@ -162,13 +162,6 @@ for n = 1:size(dat.u_bin,2)
     F(4,n) = dat.hgf_binary_mab_2mu0_mc_pe_res.sub(n).est.optim.LME;
 end
 
-%%
-metac_dir = pwd;
-cd('C:\Users\alhess\Documents\GitLab_TNU\spirl_analysis\VBA-toolbox');
-VBA_setup();
-cd(metac_dir)
-
-%%
 [posterior, out] = VBA_groupBMC(F);
 
 

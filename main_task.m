@@ -7,7 +7,7 @@
 dirs = regexp(path,['[^;]*'],'match');
 
 % Return all search path directories containing this string
-strsToFind = {'tapas'}; 
+strsToFind = {'tapas', 'hgf-toolbox', 'comb_obs_models', 'VBA-toolbox'}; 
 
 % loop over strings & entries
 for i = 1:numel(strsToFind)
@@ -23,6 +23,9 @@ end
 %% add hgf toolbox
 addpath(genpath('hgf-toolbox'));
 addpath('comb_obs_models');
+cd('VBA-toolbox')
+VBA_setup();
+cd ..
 
 
 %% load data

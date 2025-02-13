@@ -1,0 +1,94 @@
+%% [METAC] exploration data set - SBF Analysis
+
+
+%% remove default toolboxes that could be conflicting
+
+% List all paths in search path and break them into a cell array
+dirs = regexp(path,['[^;]*'],'match');
+
+% Return all search path directories containing this string
+strsToFind = {'tapas', 'hgf-toolbox', 'comb_obs_models', 'VBA-toolbox'}; 
+
+% loop over strings & entries
+for i = 1:numel(strsToFind)
+    strToFind = char(strsToFind(i));
+    % Index to cell entries containing the desired string
+    whichCellEntry = find(cellfun(@(dirs) contains(dirs, strToFind), dirs) == 1);
+    % remove from path
+    for j = 1:length(whichCellEntry)
+        rmpath(char(dirs(whichCellEntry(j))))
+    end
+end
+
+%% add hgf toolbox
+addpath(genpath('hgf-toolbox'));
+addpath('comb_obs_models');
+cd('VBA-toolbox')
+VBA_setup();
+cd ..
+
+%% load task data
+% dat = load_discovery_set();
+load(fullfile('data', 'discovery_set_tmp.mat'));
+
+%% fit behavioural models
+% dat = metac_fit_behaviour(dat);
+load(fullfile('data', 'discovery_set_fits_tmp.mat'));
+
+
+
+
+
+
+%% load ppids
+
+id = readtable(fullfile('data', 'metac_ppids_exploration_set.txt'));
+ppidstr = cell(size(id,1),1);
+for i = 1: size(id,1)
+    ppidstr{i} = ['METAC_', num2str(id{i,1})];
+end
+
+
+%% load questionnaire data
+
+datadir = fullfile('P:METAC_Iglesias', 'Data');
+f = dir(fullfile(datadir, '*.csv'));
+
+%% load ppids of discovery set
+df = readtable(fullfile(f.folder, f.name));
+idx = find(contains(df.ppid, ppidstr));
+df_discovery = df(idx,:);
+
+%% extract FAS scores and features
+y_fas = df_discovery.fas_exp_total_score(find(~isnan(df_discovery.fas_exp_total_score)));
+
+X = [df_discovery.demo_age(find(~isnan(df_discovery.demo_age))),...
+    df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)))...
+    ];
+
+tab = table(df_discovery.fas_exp_total_score(find(~isnan(df_discovery.fas_exp_total_score))),...
+    df_discovery.demo_age(find(~isnan(df_discovery.demo_age))),...
+    df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)))...
+    );
+tab.Properties.VariableNames = {'FAS', 'age', 'gender'};
+
+
+
+%% save Y & X
+save_path = fullfile('data', ['tmp_data.csv']);
+writetable(tab, save_path);
+
+
+%% find PPIDs
+% for n = 1%:size(id,1)
+%     ppid = ['TNU_METAC_', num2str(id{n,1})];
+%     d = dir(fullfile(basedir, ppid, fname));
+%     for i = 1:size(d,1)
+%         if contains(d(i).name, 'experiment')
+%             % specs stored in rows 1-2
+%             dat = readtable(fullfile(d(i).folder, d(i).name), 'NumHeaderLines', 2)
+%         end
+%     end
+% end
+
+
