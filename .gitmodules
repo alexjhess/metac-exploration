@@ -1,3 +1,6 @@
 [submodule "hgf-toolbox"]
 	path = hgf-toolbox
 	url = https://github.com/ComputationalPsychiatry/hgf-toolbox.git
+[submodule "VBA-toolbox"]
+	path = VBA-toolbox
+	url = git@github.com:MBB-team/VBA-toolbox.git
