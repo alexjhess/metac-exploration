@@ -1,4 +1,4 @@
-function [sumLME, pp, GBF] = metac_FFXBMS(LME)
+function [sumLME, pp, GBF, ABF] = metac_FFXBMS(LME)
 % author: Alex J. Hess
 % date: 2025-02-13
 % version: 1.0
@@ -26,6 +26,8 @@ GBF =  [];
 if size(LME,2) == 4
     % compute Group Bayes Factor (m4 vs m1)
     GBF = exp(sumLME(4) - sumLME(1));
+    % compute average BF (ABF m4 vs m1)
+    ABF = GBF^(1/size(LME,1));
     % compute the posterior model probabilities
     sumLME_maxsubtracted = sumLME - max(sumLME);
     pp = exp(sumLME_maxsubtracted)./sum(exp(sumLME_maxsubtracted));

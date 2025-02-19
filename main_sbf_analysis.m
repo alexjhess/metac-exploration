@@ -32,6 +32,9 @@ cd ..
 load(fullfile('data', 'discovery_set_tmp.mat'));
 
 %% fit behavioural models
+
+% calc ABF from GBF
+
 % dat = metac_fit_behaviour(dat);
 load(fullfile('data', 'discovery_set_fits_tmp.mat'));
 
@@ -51,8 +54,9 @@ end
 
 %% load questionnaire data
 
-datadir = fullfile('P:METAC_Iglesias', 'Data');
-f = dir(fullfile(datadir, '*.csv'));
+% datadir = fullfile('P:METAC_Iglesias', 'Data');
+datadir = fullfile('data');
+f = dir(fullfile(datadir, 'METAC1*.csv'));
 
 %% load ppids of discovery set
 df = readtable(fullfile(f.folder, f.name));
@@ -61,34 +65,31 @@ df_discovery = df(idx,:);
 
 %% extract FAS scores and features
 y_fas = df_discovery.fas_exp_total_score(find(~isnan(df_discovery.fas_exp_total_score)));
-
 X = [df_discovery.demo_age(find(~isnan(df_discovery.demo_age))),...
     df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)))...
     ];
 
-tab = table(df_discovery.fas_exp_total_score(find(~isnan(df_discovery.fas_exp_total_score))),...
-    df_discovery.demo_age(find(~isnan(df_discovery.demo_age))),...
-    df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)))...
-    );
-tab.Properties.VariableNames = {'FAS', 'age', 'gender'};
+%% extract other features
+% avg overall control, tolerance, ...
 
 
 
-%% save Y & X
+%% create table for winning mod 1
+m = dat.ffx.idx;
+pars = dat.param_mat(dat.mod(m).obs_idx(1:end-1),:)';
+tab = table(y_fas, X(:,1), X(:,2), ...
+    pars(:,1), pars(:,2), pars(:,3), pars(:,4));
+tab.Properties.VariableNames = {'FAS', 'age', 'gender',...
+    'gamma', 'shift', 'scale', 'w'};
+
+%% normalize values ?
+tab_norm = normalize(tab);
+
+
+%% write csv file with data for Bayesian ANCOVA
 save_path = fullfile('data', ['tmp_data.csv']);
 writetable(tab, save_path);
 
-
-%% find PPIDs
-% for n = 1%:size(id,1)
-%     ppid = ['TNU_METAC_', num2str(id{n,1})];
-%     d = dir(fullfile(basedir, ppid, fname));
-%     for i = 1:size(d,1)
-%         if contains(d(i).name, 'experiment')
-%             % specs stored in rows 1-2
-%             dat = readtable(fullfile(d(i).folder, d(i).name), 'NumHeaderLines', 2)
-%         end
-%     end
-% end
-
+save_path2 = fullfile('data', ['tmp_norm_data.csv']);
+writetable(tab_norm, save_path2);
 

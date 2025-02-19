@@ -27,11 +27,9 @@ cd('VBA-toolbox')
 VBA_setup();
 cd ..
 
-
 %% load data
 % dat = load_discovery_set();
 load('data\discovery_set_tmp.mat');
-
 
 %% visualise raw data
 metac_plot_raw_data(dat);
