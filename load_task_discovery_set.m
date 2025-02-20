@@ -1,4 +1,4 @@
-function dat = load_discovery_set()
+function dat = load_task_discovery_set()
 
 
 %% load behavioural data
@@ -10,7 +10,10 @@ id = readtable(fullfile('data', 'metac_ppids_exploration_set.txt'));
 
 u_bin = NaN(80,size(id,1));
 y_pred = NaN(80,size(id,1));
-u_ymc = NaN(80,size(id,1));
+y_mc = NaN(80,size(id,1));
+y_c = NaN(80,size(id,1));
+y_tol = NaN(80,size(id,1));
+y_av = NaN(80,size(id,1));
 
 for n = 1:size(id,1)
     ppid = ['TNU_METAC_', num2str(id{n,1})];
@@ -20,15 +23,28 @@ for n = 1:size(id,1)
         if contains(d(i).name, 'experiment')
             % specs stored in rows 1-2
             tmp = readtable(fullfile(d(i).folder, d(i).name), 'NumHeaderLines', 2);
+            if ismember('overall_control', tmp.Properties.VariableNames) %task v4
+                tmp_av = readtable(fullfile(d(i).folder, d(i).name), 'NumHeaderLines', 83);
+            end
         end
     end
     u_bin(:,n) = tmp.jSuccess(1:80);
     y_pred(:,n) = tmp.prediction(1:80);
-    try
-        y_mc(:,n) = tmp.control(1:80);
-    catch
+    % try
+    %     y_mc(:,n) = tmp.control(1:80);
+    % catch
+    %     y_mc(:,n) = tmp.expl_control(1:80);
+    % end
+    if ismember('overall_control', tmp.Properties.VariableNames) %task v4
         y_mc(:,n) = tmp.expl_control(1:80);
+        y_c(tmp.overall_control(1:80)~=-1,n) = tmp.overall_control(tmp.overall_control(1:80)~=-1);
+        y_av(80,n) = tmp_av.aversiveness;
+    else % task v3.1
+        y_mc(:,n) = tmp.control(1:80);
+        y_c(tmp.handling(1:80)~=-1,n) = tmp.handling(tmp.handling(1:80)~=-1);
+        y_av(tmp.aversiveness(1:80)~=-1,n) = tmp.aversiveness(tmp.aversiveness(1:80)~=-1);
     end
+    y_tol(tmp.tolerance(1:80)~=-1,n) = tmp.tolerance(tmp.tolerance(1:80)~=-1);
 end
 
 u_pe = u_bin - y_pred;
@@ -87,6 +103,9 @@ dat.phase = phase;
 dat.u_bin = u_bin;
 dat.y_pred = y_pred;
 dat.y_mc = y_mc;
+dat.y_c = y_c;
+dat.y_tol = y_tol;
+dat.y_av = y_av;
 dat.u_pe = u_pe;
 dat.u_pe_sq = u_pe_sq;
 dat.u_pe_pos = u_pe_pos;

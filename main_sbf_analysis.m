@@ -28,59 +28,76 @@ VBA_setup();
 cd ..
 
 %% load task data
-% dat = load_discovery_set();
+
+% dat = load_task_discovery_set();
 load(fullfile('data', 'discovery_set_tmp.mat'));
 
-%% fit behavioural models
 
-% calc ABF from GBF
+%% fit behavioural models & extract other task features
 
 % dat = metac_fit_behaviour(dat);
 load(fullfile('data', 'discovery_set_fits_tmp.mat'));
 
-
-
-
-
-
-%% load ppids
-
-id = readtable(fullfile('data', 'metac_ppids_exploration_set.txt'));
-ppidstr = cell(size(id,1),1);
-for i = 1: size(id,1)
-    ppidstr{i} = ['METAC_', num2str(id{i,1})];
-end
-
-
-%% load questionnaire data
-
-% datadir = fullfile('P:METAC_Iglesias', 'Data');
-datadir = fullfile('data');
-f = dir(fullfile(datadir, 'METAC1*.csv'));
-
-%% load ppids of discovery set
-df = readtable(fullfile(f.folder, f.name));
-idx = find(contains(df.ppid, ppidstr));
-df_discovery = df(idx,:);
-
-%% extract FAS scores and features
-y_fas = df_discovery.fas_exp_total_score(find(~isnan(df_discovery.fas_exp_total_score)));
-X = [df_discovery.demo_age(find(~isnan(df_discovery.demo_age))),...
-    df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)))...
-    ];
-
-%% extract other features
 % avg overall control, tolerance, ...
+dat.task.avg_c = mean(dat.y_c,'omitnan')';
+dat.task.avg_tol = mean(dat.y_tol,'omitnan')';
+dat.task.avg_av = mean(dat.y_av,'omitnan')';
 
+%% avg value per sub
+figure
+plot(dat.task.avg_c)%, '.')
+hold on;
+plot(dat.task.avg_tol)%, '.')
+plot(dat.task.avg_av)%, '.')
+hold off;
+legend('control', 'tol', 'av')
+ylim([0 1])
+xlabel('sub')
+
+%% indiv sub
+figure
+plot(dat.y_c(10:10:80,:))
+hold on;
+plot(dat.y_tol(10:10:80,:))
+plot(dat.y_av(10:10:80,:))
+hold off;
+ylim([0 1])
+
+%% mean over sub
+figure
+avg_c = mean(dat.y_c, 2, 'omitnan')
+avg_tol = mean(dat.y_tol, 2, 'omitnan')
+avg_av = mean(dat.y_av, 2, 'omitnan')
+plot(avg_c(10:10:80))
+hold on;
+plot(avg_tol(10:10:80))
+plot(avg_av(10:10:80))
+hold off;
+ylim([0 1])
+xlabel('trial')
+legend('control', 'tol', 'av')
+
+
+
+%% load quest data
+
+% quest = load_quest_discovery_set();
+load(fullfile('data', 'discovery_set_quest_tmp.mat'));
+
+dat.quest = quest;
 
 
 %% create table for winning mod 1
 m = dat.ffx.idx;
-pars = dat.param_mat(dat.mod(m).obs_idx(1:end-1),:)';
-tab = table(y_fas, X(:,1), X(:,2), ...
-    pars(:,1), pars(:,2), pars(:,3), pars(:,4));
-tab.Properties.VariableNames = {'FAS', 'age', 'gender',...
-    'gamma', 'shift', 'scale', 'w'};
+pars = dat.param_mat';
+if size(pars,2) == 4
+    tab = table(dat.quest.y_fas, dat.quest.age, dat.quest.gender, ...
+        pars(:,1), pars(:,2), pars(:,3), pars(:,4), ...
+        dat.task.avg_c, dat.task.avg_tol, dat.task.avg_av);
+    tab.Properties.VariableNames = {'FAS', 'age', 'gender',...
+        'gamma', 'shift', 'scale', 'w',...
+        'contr', 'tol', 'av'};
+end
 
 %% normalize values ?
 tab_norm = normalize(tab);

@@ -89,10 +89,8 @@ end
 if ~isempty(dat.ffx.ABF)
     fprintf('ABF %i \n', dat.ffx.ABF)
 end
-% Take N_sub-th root of GBF (arithmetic mean)
 
-
-% RFX BMS
+%% RFX BMS
 [dat.rfx.posterior, dat.rfx.out] = VBA_groupBMC(dat.F);
 [dat.rfx.val, dat.rfx.idx] = max(dat.rfx.out.pxp);
 disp('RFX BMS results: ')
