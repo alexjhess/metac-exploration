@@ -1,9 +1,14 @@
-function quest = load_quest_discovery_set()
+function quest = load_quest_data(dataset)
 
 
 %% load ppids
 
-id = readtable(fullfile('data', 'metac_ppids_exploration_set.txt'));
+if dataset = 1; % 1=discovery set
+    id = readtable(fullfile('data', 'metac_ppids_discovery_set.txt'));
+elseif dataset == 2 % validation set
+    id = readtable(fullfile('data', 'metac_ppids_validation_set.txt'));
+end
+    
 ppidstr = cell(size(id,1),1);
 for i = 1: size(id,1)
     ppidstr{i} = ['METAC_', num2str(id{i,1})];
@@ -41,7 +46,11 @@ quest.gender = df_discovery.demo_gender(find(~isnan(df_discovery.demo_gender)));
 
 
 %% save struct
-save('data\discovery_set_quest_tmp.mat', 'quest', '-mat');
+if dataset == 1 % discovery set
+    save('data\discovery_set_quest_tmp.mat', 'dat', '-mat');
+elseif dataset == 2 % validation set
+    save('data\validation_set_quest_tmp.mat', 'dat', '-mat');
+end
 
 
 end

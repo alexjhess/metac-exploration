@@ -22,6 +22,7 @@ function [sumLME, pp, GBF, ABF] = metac_FFXBMS(LME)
 %% compute sum of the approx. LME
 sumLME = sum(LME,1);
 GBF =  [];
+ABF = [];
 
 if size(LME,2) == 4
     % compute Group Bayes Factor (m4 vs m1)

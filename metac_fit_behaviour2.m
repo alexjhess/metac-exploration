@@ -1,21 +1,24 @@
-function [gest, mod] = metac_fit_behaviour(dat, pdat, mod, priors)
+function [dat] = metac_fit_behaviour2(dat)
 
 
 %% plot settings
 % dock all figures
 set(0,'DefaultFigureWindowStyle','docked')
 
-% create model space
-% [mod, bo] = metac_create_model_space(1); % 1=logit spacemod = dat.mod;
+%% create model space
+[mod, bo] = metac_create_model_space(1); % 1=logit space
 
 
 %% fit mc obs models using rawPE as input
 
-gest.F = NaN(size(mod,2),size(dat.u_bin,2));
-gest.Ll = NaN(size(mod,2),size(dat.u_bin,2));
-gest.comp = NaN(size(mod,2),size(dat.u_bin,2));
+dat.main.F = NaN(size(mod,2),size(dat.u_bin,2));
+dat.main.Ll = NaN(size(mod,2),size(dat.u_bin,2));
+dat.main.comp = NaN(size(mod,2),size(dat.u_bin,2));
 
 for m = 1:size(mod,2)
+
+    % overwrite with pilot priors
+    mod(m).obs_config = dat.main.ModSpace(m).obs_config;
 
     % init obs param_mat (size n_obs_pars x N)
     mod(m).param_mat = NaN(size(mod(m).obs_idx,2),...
@@ -24,16 +27,16 @@ for m = 1:size(mod,2)
     for n = 1:size(dat.u_pe,2)
         
         % fit
-        mod(m).sub(n).est = tapas_fitModel(pdat.y_mc(:,n),...
-            [dat.u_bin(:,n) pdat.u_pe(:,n)],...
+        mod(m).sub(n).est = tapas_fitModel(dat.pdat.y_mc(:,n),...
+            [dat.u_bin(:,n) dat.pdat.u_pe(:,n)],...
             mod(m).prc_config,...
             mod(m).obs_config,...
             tapas_quasinewton_optim_config ...
             );
 
-        gest.F(m,n) = mod(m).sub(n).est.optim.LME;
-        gest.Ll(m,n) = mod(m).sub(n).est.optim.accu;
-        gest.comp(m,n) = mod(m).sub(n).est.optim.comp;
+        dat.main.F(m,n) = mod(m).sub(n).est.optim.LME;
+        dat.main.Ll(m,n) = mod(m).sub(n).est.optim.accu;
+        dat.main.comp(m,n) = mod(m).sub(n).est.optim.comp;
         mod(m).param_mat(:,n) = mod(m).sub(n).est.p_obs.p(mod(m).obs_idx);
 
         % plot
@@ -74,13 +77,8 @@ for m = 1:size(mod,2)
         hold on;
         plot(mod(m).sub(n).est.optim.yhat)
         ylabel('mc response')
-        if priors == 1
-            figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ip',...
-                ['mod' num2str(m) '_est_sub' num2str(n)]);
-        elseif priors == 2
-            figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ep',...
-                ['mod' num2str(m) '_est_sub' num2str(n)]);
-        end
+        figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ep',...
+            ['mod' num2str(m) '_est_sub' num2str(n)]);
         print(figdir, '-dpng');
         close;
     end
@@ -93,60 +91,52 @@ end
 %% plot acc + comp term of LME
 figure
 subplot(2,1,1)
-bar(gest.Ll')
+bar(dat.Ll')
 ylim([-200,0])
 title('accuracy')
 subplot(2,1,2)
-bar(gest.comp')
+bar(dat.comp')
 xlabel('sub')
 ylim([0,200])
 title('complexity')
 legend('null', 'res', 'pe', 'full')
-if priors == 1
-    figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ip',...
-        ['LME_decomp_acc_comp']);
-elseif priors == 2
-    figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ep',...
-        ['LME_decomp_acc_comp']);
-end
+figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ep', ['LME_decomp_acc_comp']);
 print(figdir, '-dpng');
 close;
 
 
 %% FFX BMS
-[gest.ffx.sumLME, gest.ffx.pp, gest.ffx.GBF, gest.ffx.ABF] = metac_FFXBMS(gest.F');
-[gest.ffx.val, gest.ffx.idx] = max(gest.ffx.sumLME);
+[dat.main.ffx.sumLME, dat.main.ffx.pp, dat.main.ffx.GBF, dat.main.ffx.ABF] = metac_FFXBMS(dat.main.F');
+[dat.main.ffx.val, dat.main.ffx.idx] = max(dat.main.ffx.sumLME);
 disp('FFX BMS results: ')
-fprintf('winning model %i \n', gest.ffx.idx)
-if ~isempty(gest.ffx.GBF)
-    fprintf('GBF %i \n', gest.ffx.GBF)
+fprintf('winning model %i \n', dat.main.ffx.idx)
+if ~isempty(dat.main.ffx.GBF)
+    fprintf('GBF %i \n', dat.main.ffx.GBF)
 end
-if ~isempty(gest.ffx.ABF)
-    fprintf('ABF %i \n', gest.ffx.ABF)
+if ~isempty(dat.main.ffx.ABF)
+    fprintf('ABF %i \n', dat.main.ffx.ABF)
 end
 
 %% RFX BMS
-[gest.rfx.posterior, gest.rfx.out] = VBA_groupBMC(gest.F);
-[gest.rfx.val, gest.rfx.idx] = max(gest.rfx.out.pxp);
+[dat.main.rfx.posterior, dat.main.rfx.out] = VBA_groupBMC(dat.main.F);
+[dat.main.rfx.val, dat.main.rfx.idx] = max(dat.main.rfx.out.pxp);
 disp('RFX BMS results: ')
-fprintf('winning model %i \n', gest.rfx.idx)
-fprintf('PXP %.2f \n', gest.rfx.out.pxp(gest.rfx.idx))
-fprintf('Ef %.2f \n', gest.rfx.out.Ef(gest.rfx.idx))
-if priors == 1
-    figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ip',...
-        ['rfx_bms']);
-elseif priors == 2
-    figdir = fullfile('figures', 'logit_mc_autoreg_obs', 'ep',...
-        ['rfx_bms']);
-end
-print(figdir, '-dpng');
-close;
+fprintf('winning model %i \n', dat.main.rfx.idx)
+fprintf('PXP %.2f \n', dat.main.rfx.out.pxp(dat.main.rfx.idx))
+fprintf('Ef %.2f \n', dat.main.rfx.out.Ef(dat.main.rfx.idx))
 
 
 %% extract est params of winning model
 
 % npars x N
-gest.param_mat = mod(gest.ffx.idx).param_mat;
+dat.main.param_mat = mod(dat.main.ffx.idx).param_mat;
+
+
+%% save data
+
+dat.main.mod = mod;
+
+save(fullfile('data', 'discovery_set_fits_ep_tmp.mat'), 'dat', '-mat');
 
 
 
