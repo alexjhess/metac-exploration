@@ -53,10 +53,12 @@ bmc.opt.DisplayWin = false;
 % run BMS for each data generating model
 for m = 1:size(vs.mod, 2)
     L = rec.model(m).LME';
-    [bmc.post, bmc.out] = VBA_groupBMC(L, bmc.opt); %evtl add options...
-    bmc.rfx.Ef(m,:) = bmc.out.Ef';
-    bmc.rfx.ep(m,:) = bmc.out.ep;
-    bmc.rfx.pxp(m,:) = bmc.out.pxp;
+    try
+        [bmc.post, bmc.out] = VBA_groupBMC(L, bmc.opt); %evtl add options...
+        bmc.rfx.Ef(m,:) = bmc.out.Ef';
+        bmc.rfx.ep(m,:) = bmc.out.ep;
+        bmc.rfx.pxp(m,:) = bmc.out.pxp;
+    end
 end
 
 % save to struct

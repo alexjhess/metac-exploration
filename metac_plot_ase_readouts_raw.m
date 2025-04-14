@@ -10,6 +10,10 @@ hold off;
 legend('control', 'tol', 'av')
 ylim([0 1])
 xlabel('sub')
+figdir = fullfile('figures', 'ds',...
+    ['ase_readouts_avg_per_sub']);
+print(figdir, '-dpng');
+close;
 
 %% indiv sub
 figure
@@ -19,6 +23,10 @@ plot(dat.y_tol(10:10:80,:))
 plot(dat.y_av(10:10:80,:))
 hold off;
 ylim([0 1])
+figdir = fullfile('figures', 'ds',...
+    ['ase_readouts_all_sub']);
+print(figdir, '-dpng');
+close;
 
 %% mean over sub
 figure
@@ -33,5 +41,9 @@ hold off;
 ylim([0 1])
 xlabel('trial')
 legend('control', 'tol', 'av')
+figdir = fullfile('figures', 'ds',...
+    ['ase_readouts_avg_acros_sub']);
+print(figdir, '-dpng');
+close;
 
 end

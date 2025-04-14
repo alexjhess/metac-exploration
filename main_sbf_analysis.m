@@ -30,8 +30,8 @@ cd ..
 
 %% load task data (EXPLORATION)
 dataset = 1; % 1=discovery set
-% dat = load_task_data(dataset);
-load(fullfile('data', 'discovery_set_tmp.mat'));
+dat = load_task_data(dataset);
+% load(fullfile('data', 'discovery_set_tmp.mat'));
 ds.dat = dat;
 
 %% preprocess task data
@@ -51,35 +51,40 @@ save(fullfile('data', 'discovery_set_fits_tmp.mat'), 'ds', '-mat');
 
 % load(fullfile('data', 'discovery_set_fits_tmp.mat'));
 
-%% avg overall control, tolerance, ...
+%% avg + var overall control, tolerance, ...
 ds.dat.task.avg_c = mean(ds.dat.y_c,'omitnan')';
 ds.dat.task.avg_tol = mean(ds.dat.y_tol,'omitnan')';
 ds.dat.task.avg_av = mean(ds.dat.y_av,'omitnan')';
+ds.dat.task.var_c = var(ds.dat.y_c,'omitnan')';
+ds.dat.task.var_tol = var(ds.dat.y_tol,'omitnan')';
 
 %% plot ASE-inspired readouts
 metac_plot_ase_readouts_raw(ds.dat);
 
 %% load quest data (discovery set)
 dataset = 1; % 1=discovery set
-% quest = load_quest_data(dataset);
-load(fullfile('data', 'discovery_set_quest_tmp.mat'));
+quest = load_quest_data(dataset);
+% load(fullfile('data', 'discovery_set_quest_tmp.mat'));
 ds.quest = quest;
 
-%% create table for winning mod 1 (DISCOVERY SET)
+%% create table for winning mod (DISCOVERY SET)
 m = ds.gest.ffx.idx;
 ds_pars = ds.gest.param_mat';
 if m == 4 && size(ds_pars,2) == 5
-    ds.tab = table(ds.quest.y_fas, ds.quest.age, ds.quest.gender, ...
+    ds.tab = table(ds.quest.y_fas, ds.quest.y_mfis, ds.quest.age, ds.quest.gender, ...
         ds_pars(:,2), ds_pars(:,3), ds_pars(:,4), ds_pars(:,5), ...
         ds.dat.task.avg_c, ds.dat.task.avg_tol, ds.dat.task.avg_av, ...
-        ds.quest.y_mfis);
-    ds.tab.Properties.VariableNames = {'FAS', 'age', 'gender',...
+        ds.dat.task.var_c, ds.dat.task.var_tol, ...
+        ds.quest.maia3, ds.quest.maia8, ds.quest.maia38, ds.quest.psqi);
+    ds.tab.Properties.VariableNames = {'FAS', 'MFIS', 'age', 'gender',...
         'gamma', 'shift', 'scale', 'w',...
         'contr', 'tol', 'av',...
-        'MFIS'};
+        'var_c', 'var_tol',...
+        'MAIA3', 'MAIA8', 'MAIA38', 'PSQI'};
 end
-% normalize values
-ds.tab_norm = normalize(ds.tab);
+%% normalize values (only features)
+ds.tab_norm = ds.tab;
+ds.tab_norm(:,3:end) = normalize(ds.tab(:,3:end));
 
 %% write csv file with data for Bayesian ANCOVA
 save_path = fullfile('data', ['tmp_ds_data.csv']);
@@ -105,9 +110,14 @@ close;
 [vs.mod, ep.mod] = metac_est_ep(ds.dat, ds.mod);
 
 %% create synthetic data
+% seed for rng
+rng(123, 'twister')
+opts.rng.settings = rng;
+opts.rng.idx = 1; % Set counter for random number states
+
 n_pe = 1; % PE traj from pilot sub n_pe
 n_sim = 100;
-[ep.sim] = metac_sim_ep(ds.dat, ds.pdat, vs.mod, n_pe, n_sim);
+[ep.sim] = metac_sim_ep(ds.dat, ds.pdat, vs.mod, n_pe, n_sim, opts);
 
 %% fit simulated data
 
@@ -140,8 +150,8 @@ save(fullfile('data', 'empirical_priors_rec.mat'), 'ep', '-mat');
 
 %% load validation set task
 dataset = 2; % 2=validation set
-% dat = load_task_data(dataset);
-load(fullfile('data', 'validation_set_tmp.mat'));
+dat = load_task_data(dataset);
+% load(fullfile('data', 'validation_set_tmp.mat'));
 vs.dat = dat;
 
 %% preprocess task data
@@ -157,14 +167,16 @@ save(fullfile('data', 'validation_set_fits_tmp.mat'), 'vs', '-mat');
 vs.dat.task.avg_c = mean(vs.dat.y_c,'omitnan')';
 vs.dat.task.avg_tol = mean(vs.dat.y_tol,'omitnan')';
 vs.dat.task.avg_av = mean(vs.dat.y_av,'omitnan')';
+vs.dat.task.var_c = var(vs.dat.y_c,'omitnan')';
+vs.dat.task.var_tol = var(vs.dat.y_tol,'omitnan')';
 
 %% plot ASE-inspired readouts
 metac_plot_ase_readouts_raw(vs.dat);
 
 %% load quest data
 dataset = 2; % 2=validation set
-% quest = load_quest_data(dataset);
-load(fullfile('data', 'validation_set_quest_tmp.mat'));
+quest = load_quest_data(dataset);
+% load(fullfile('data', 'validation_set_quest_tmp.mat'));
 vs.quest = quest;
 
 
@@ -172,17 +184,20 @@ vs.quest = quest;
 m = vs.gest.ffx.idx;
 vs_pars = vs.gest.param_mat';
 if m == 4 && size(vs_pars,2) == 5
-    vs.tab = table(vs.quest.y_fas, vs.quest.age, vs.quest.gender, ...
+    vs.tab = table(vs.quest.y_fas, vs.quest.y_mfis, vs.quest.age, vs.quest.gender, ...
         vs_pars(:,2), vs_pars(:,3), vs_pars(:,4), vs_pars(:,5), ...
         vs.dat.task.avg_c, vs.dat.task.avg_tol, vs.dat.task.avg_av, ...
-        vs.quest.y_mfis);
-    vs.tab.Properties.VariableNames = {'FAS', 'age', 'gender',...
+        vs.dat.task.var_c, vs.dat.task.var_tol, ...
+        vs.quest.maia3, vs.quest.maia8, vs.quest.maia38, vs.quest.psqi);
+    vs.tab.Properties.VariableNames = {'FAS', 'MFIS', 'age', 'gender',...
         'gamma', 'shift', 'scale', 'w',...
         'contr', 'tol', 'av',...
-        'MFIS'};
+        'var_c', 'var_tol',...
+        'MAIA3', 'MAIA8', 'MAIA38', 'PSQI'};
 end
-% normalize values
-vs.tab_norm = normalize(vs.tab);
+%% normalize values (only features)
+vs.tab_norm = vs.tab;
+vs.tab_norm(:,3:end) = normalize(vs.tab(:,3:end));
 
 
 %% write csv file with data for Bayesian ANCOVA
@@ -215,9 +230,96 @@ close;
 % scatter(ds.tab.tol, ds.tab.av)
 % xlabel('tolerance')
 % ylabel('aversiveness')
-% 
-% %% FAS vs MFIS
-% figure
-% plot(ds.tab.MFIS, ds.tab.FAS, '.')
-% xlabel('MFIS')
-% ylabel('FAS')
+
+%% FAS vs MFIS
+figure
+subplot(1,2,1)
+plot(ds.tab.MFIS, ds.tab.FAS, '.')
+xlabel('MFIS')
+ylabel('FAS')
+ylim([10 50])
+subplot(1,2,2)
+plot(vs.tab.MFIS, vs.tab.FAS, '.')
+xlabel('MFIS')
+ylabel('FAS')
+ylim([10 50])
+
+figure
+plot(ds.tab.MFIS, ds.tab.FAS, '.')
+hold on;
+plot(vs.tab.MFIS, vs.tab.FAS, '.')
+xlabel('MFIS')
+ylabel('FAS')
+ylim([10 50])
+
+
+%% 
+ds.tab = readtable(fullfile('data', ['tmp_ds_data.csv']));
+vs.tab = readtable(fullfile('data', ['tmp_vs_data.csv']));
+
+%%
+
+submat_ds = [ds.tab.FAS ds.tab.gamma ds.tab.av];
+
+% plot ds
+figure
+gplotmatrix(submat_ds,[],[],[],[],[],[],[],...
+    {'FAS', 'gamma', 'av'})
+% calc
+[coef_ds, pval_ds] = corr(submat_ds);
+coef_ds
+pval_ds<0.05
+
+%%
+submat_vs = [vs.tab.FAS vs.tab.gamma vs.tab.av];
+
+% plot vs
+figure
+gplotmatrix(submat_vs,[],[],[],[],[],[],[],...
+    {'FAS', 'gamma', 'av'})
+% calc
+[coef_vs, pval_vs] = corr(submat_vs);
+coef_vs
+pval_vs<0.05
+
+%%
+submat_tot = [ds.tab.FAS ds.tab.gamma ds.tab.av;
+    vs.tab.FAS vs.tab.gamma vs.tab.av];
+
+% plot ds
+figure
+gplotmatrix(submat_tot,[],[],[],[],[],[],[],...
+    {'FAS', 'gamma', 'av'})
+% calc
+[coef_tot, pval_tot] = corr(submat_tot);
+coef_tot
+pval_tot<0.05
+
+%%
+mat_tot = [table2array(ds.tab); table2array(vs.tab)];
+
+% plot all vars (tot data set)
+figure
+gplotmatrix(mat_tot,[],[],[],[],[],[],[],vs.tab.Properties.VariableNames)
+
+% calc corr
+[coef_tot, pval_tot] = corr(mat_tot);
+coef_tot
+pval_tot<0.05
+
+
+%% TODO
+
+% compare to PBIHB data ... ?
+% check scoring of questionnaires ... (MAIA?)
+% days between online quest and exp day ?
+
+
+
+
+
+
+%% linear regr
+
+help glmfit
+

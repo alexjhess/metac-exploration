@@ -121,9 +121,9 @@ dat.exp_seq = exp_seq;
 
 %% save struct
 if dataset == 1 % discovery set
-    save('data\discovery_set_tmp.mat', 'dat', '-mat');
+    save(fullfile('data', opts.ds.fname), 'dat', '-mat');
 elseif dataset == 2 % validation set
-    save('data\validation_set_tmp.mat', 'dat', '-mat');
+    save(fullfile('data', opts.vs.fname)', 'dat', '-mat');
 end
 
 

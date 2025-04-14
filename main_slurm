@@ -1,0 +1,159 @@
+#!/bin/bash
+# antfMRI SSL
+
+# MATLAB Version: R2019b
+#module load new matlab/R2019b #module load matlab/R2017b
+module load matlab/R2023b #module load matlab/R2017b
+
+logDir="./logs/"
+
+# Just starting MATLAB/SPM can be heavy, so request mem by default
+#bsub="echo bsub -R rusage[mem=16000] -R stable"
+slurm="sbatch --mem-per-cpu=16000" # TODO: Do we still need "stable"-option?
+
+
+# define global variables
+EULER=1
+nS_pilot=20
+nS_sim=100
+nS_main=30
+nMod=5
+
+
+#####################
+### DISCOVERY SET ###
+#####################
+
+# step 1: set specifications & define model space
+myjobid=$($slurm --parsable -J "job_1_init_analysis" -t 4:00:00 -o ${logDir}o_master1_init -e ${logDir}e_master1_init \
+    --wrap="matlab -nodisplay -singleCompThread -r \"metac_job_1_init($EULER)\"");
+
+## TODO: Probably need Job-IDs
+# step 2: invert models on discovery set
+loopjobids=();
+for model in $( seq 1 $nMod); do
+  loopjobids+=( $($slurm --parsable -J "job_2_ds_fit_m($model)_sub" \
+    -t 4:00:00 -o ${logDir}o_master2_ds_fit$model -e ${logDir}e_master2_ds_fit$model \
+    -d "afterok:$myjobid" \
+    --array=1-$nS_pilot \
+    --wrap="matlab -singleCompThread -r \"metac_job_2_ds_fit($EULER, \$SLURM_ARRAY_TASK_ID, $model)\"") );
+done
+dep=$(printf ",%s" "${loopjobids[@]}");
+dep="$myjobid${dep}" # First comma already from printf
+
+# step 3: est empirical priors
+myjobid=$($slurm --parsable -J "job_3_eps" \
+  -t 4:00:00 -o ${logDir}o_master3_ep -e ${logDir}e_master3_ep \
+  -d "afterok:${dep}" \
+  --wrap="matlab -singleCompThread -r \"metac_job_3_ep($EULER)\"");
+
+###################
+### SIMULATIONS ###
+###################
+# step 4: sim synthetic data set
+myjobid=$($slurm --parsable -J "job_4_sim" -t 4:00:00 -o ${logDir}o_master4_sim \
+  -e ${logDir}e_master4_sim -d "afterok:${myjobid}" \
+  --wrap="matlab -singleCompThread -r \"metac_job_4_sim($EULER)\"");
+
+# step 5: invert models on synthetic data
+loopjobids=()
+for model in $( seq 1 $nMod); do
+  for m in $( seq 1 $nMod); do
+    # TODO: Index output-files with $m?
+    loopjobids+=( $($slurm --parsable -J "job_5_m($model)sim_m($m)est_sub" \
+      --array=1-$nS_sim \
+      -t 4:00:00 -o ${logDir}o_master5_sim_fit$model -e ${logDir}e_master5_sim_fit$model \
+      -d "afterok:$myjobid" \
+      --wrap="matlab -singleCompThread -r \"metac_job_5_sim_data_fit($EULER, \$SLURM_ARRAY_TASK_ID, $model, $m)\"") );
+  done
+done
+
+dep=$(printf ",%s" "${loopjobids[@]}");
+dep="${dep:1}" # Remove first comma.
+
+# # step 6: analyze fitted synthetic data
+# myjobid=$($slurm --parsable -J "job_recovery_analysis" \
+#   -t 4:00:00 -o ${logDir}o_master6_recovery_analysis -e ${logDir}e_master6_recovery_analysis \
+#   -d "afterok:$dep" \
+#   --wrap="matlab -singleCompThread -r \"job_runner_6_rec_analysis($EULER)\"");
+#
+# # step 7: setup family BMC simulations
+# myjobid=$($slurm --parsable -J "job_setupFamSim" -t 4:00:00 -o ${logDir}o_master7_FamSimSetup \
+#   -e ${logDir}e_master7_FamSimSetup -d "afterok:$myjobid"\
+#   --wrap="matlab -singleCompThread -r \"job_runner_7_family_power($EULER)\"");
+#
+# # step 8: run family level BMS in parallel for synthetic families
+# #$bsub -J "job_sim_famBMS_[1-$nJobs_sim_fam]" \
+# #  -W 4:00 -o ${logDir}o_master8_sim_famBMS -e ${logDir}e_master8_sim_famBMS \
+# #  -w 'ended("job_setupFamSim")' \
+# #  matlab -singleCompThread -r "job_runner_8_sim_family_BMS($EULER, \$LSB_JOBINDEX)";
+# myjobid=$($slurm --parsable -J "job_sim_famBMS" \
+#   --array=1-$nJobs_sim_fam \
+#   -t 4:00:00 -o ${logDir}o_master8_sim_famBMS -e ${logDir}e_master8_sim_famBMS \
+#   -d "afterok:$myjobid"\
+#   --wrap="matlab -singleCompThread -r \"job_runner_8_sim_family_BMS($EULER, \$SLURM_ARRAY_TASK_ID)\"");
+#
+# # step 9: analyze family sim results
+# #$bsub -J "job_famSim_res" \
+# #  -W 4:00 -o ${logDir}o_master9_famSim_res -e ${logDir}e_master9_famSim_res \
+# #  -w 'ended("job_setupFamSim") && ended("job_sim_famBMS_*")' \
+# #  matlab -singleCompThread -r "job_runner_9_family_power_res($EULER)";
+# myjobid=$($slurm --parsable -J "job_famSim_res" \
+#   -t 4:00:00 -o ${logDir}o_master9_famSim_res -e ${logDir}e_master9_famSim_res \
+#   -d "afterok:$myjobid" \
+#   --wrap="matlab -singleCompThread -r \"job_runner_9_family_power_res($EULER)\"");
+#
+#
+# #####################
+# ### MAIN DATA SET ###
+# #####################
+#
+# # step 10: model agnostic analysis main data set
+# #$bsub -J "job_main_model_agnostic" -W 4:00 -o ${logDir}o_master10_ModAgn -e ${logDir}e_master10_ModAgn \
+# #  -w 'ended("job_famSim_res")' \
+# #  matlab -nodisplay -singleCompThread -r "job_runner_10_main_model_agnostic($EULER)";
+# myjobid=$($slurm --parsable -J "job_main_model_agnostic" -t 4:00:00 -o ${logDir}o_master10_ModAgn -e ${logDir}e_master10_ModAgn \
+#   -d "afterok:$myjobid"\
+#   --wrap="matlab -nodisplay -singleCompThread -r \"job_runner_10_main_model_agnostic($EULER)\"");
+#
+# # step 11: invert models on main data
+# #for model in $(eval echo "{1..$nMod}"); do
+# loopjobids=()
+# for model in $( seq 1 $nMod); do
+# #  $bsub -J "job_main_modelinversion_m($model)_sub[1-$nS_main]" \
+# #    -W 4:00 -o ${logDir}o_master11_main_modelInv$model -e ${logDir}e_master11_main_modelInv$model \
+# #    -w 'ended("job_main_model_agnostic")' \
+# #    matlab -singleCompThread -r "job_runner_11_main_modinv($EULER, \$LSB_JOBINDEX, $model)";
+#   loopjobids+=($($slurm --parsable -J "job_main_modelinversion_m($model)_sub" \
+#     --array=1-$nS_main \
+#     -t 4:00:00 -o ${logDir}o_master11_main_modelInv$model -e ${logDir}e_master11_main_modelInv$model \
+#     -d "afterok:$myjobid"\
+#     --wrap="matlab -singleCompThread -r \"job_runner_11_main_modinv($EULER, \$SLURM_ARRAY_TASK_ID, $model)\""));
+# done
+#
+# dep=$(printf ",%s" "${loopjobids[@]}");
+# dep="${dep:1}" # Remove first comma.
+# # step 12: analyze fitted data
+# #$bsub -J "job_main_results" \
+# #  -W 4:00 -o ${logDir}o_master12_main_res -e ${logDir}e_master12_main_res \
+# #  -w 'ended("job_main_model_agnostic") && ended("job_main_modelinversion_m*")' \
+# #  matlab -singleCompThread -r "job_runner_12_main_results($EULER)";
+# myjobid=$($slurm --parsable -J "job_main_results" \
+#   -t 4:00:00 -o ${logDir}o_master12_main_res -e ${logDir}e_master12_main_res \
+#   -d "afterok:$dep" \
+#   --wrap="matlab -singleCompThread -r \"job_runner_12_main_results($EULER)\"");
+#
+#
+# ###########################
+# ### PLOT & MOVE RESULTS ###
+# ###########################
+#
+# # create figures
+# #$bsub -J "job_plot_results" \
+# #  -W 4:00 -o ${logDir}o_master_plot_res -e ${logDir}e_master_plot_res \
+# #  -w 'ended("job_main_results")' \
+# #  matlab -singleCompThread -r "job_runner_plot_results($EULER)";
+# myjobid=$($slurm --parsable -J "job_plot_results" \
+#   -t 4:00:00 -o ${logDir}o_master_plot_res -e ${logDir}e_master_plot_res \
+#   -d "afterok:$myjobid"\
+#   --wrap="matlab -singleCompThread -r \"job_runner_plot_results($EULER)\"");

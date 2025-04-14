@@ -6,7 +6,7 @@ function [vs_mod, ep_mod] = metac_est_ep(dat, ds_mod)
 ep_mod = struct();
 for n = 1:size(dat.u_pe,2)
     for m = 1:size(ds_mod,2)
-        fprintf('current iteration: n=%1.0f, m=%1.0f \n', n,m);
+        % fprintf('current iteration: n=%1.0f, m=%1.0f \n', n,m);
         % mod(m).sub(n).est = load(fullfile(saveDir, 'results',...
         %     'pilots', ['sub', num2str(n)], ['est_mod', num2str(m)]));
         

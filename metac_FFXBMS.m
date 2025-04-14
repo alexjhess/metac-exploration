@@ -24,7 +24,7 @@ sumLME = sum(LME,1);
 GBF =  [];
 ABF = [];
 
-if size(LME,2) == 4
+if size(LME,2) == 4 || size(LME,2) == 5
     % compute Group Bayes Factor (m4 vs m1)
     GBF = exp(sumLME(4) - sumLME(1));
     % compute average BF (ABF m4 vs m1)
