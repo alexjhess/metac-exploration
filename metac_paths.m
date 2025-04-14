@@ -49,7 +49,7 @@ if EULER == 1
     VBA_setup();
     cd ..
 
-    sdir= '/cluster/work/tnu/alhess/spirl_slurm_normal';
+    sdir= '/cluster/work/tnu/alhess/metac_1_slurm';
 end
 
 end
