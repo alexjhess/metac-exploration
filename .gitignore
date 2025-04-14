@@ -164,6 +164,7 @@ cython_debug/
 # custom
 data/*
 figures/*
+results/*
 comb_obs_models/*
 mc_obs/*
 !*.gitkeep
